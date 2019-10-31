@@ -1,5 +1,4 @@
 import ee
-import time
 from task_base import EETask
 
 
@@ -35,24 +34,12 @@ class HIIPopulationDensity(EETask):
             .log()\
             .multiply(ee.Image(3.333))
         # TODO: mask water with centralized HII-defined water images
-        # TODO: normalize this and all drivers, so that applying weights to intermediate products by others is clear
-        #  and consistent?
 
         self.export_image_ee(gpw_venter, '{}/{}'.format(self.ee_driverdir, 'hii_popdens_driver'))
 
     def check_inputs(self):
         super().check_inputs()
-        # add any task-specific checks here, and set self.status = SKIPPED if any fail
-
-    def run(self):
-        super().run()
-        if self.status == self.RUNNING:
-            self.run_calc()
-            while self.get_unfinished_ee_tasks():
-                time.sleep(30)
-            self.status = self.COMPLETE
-
-        print('status: {}'.format(self.status))
+        # add any task-specific checks here, and set self.status = self.FAILED if any fail
 
 
 popdens_task = HIIPopulationDensity()
