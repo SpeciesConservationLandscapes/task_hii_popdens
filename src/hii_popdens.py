@@ -8,6 +8,7 @@ class HIIPopulationDensity(EETask):
     # if input lives in ee, it should have an "ee_path" pointing to an ImageCollection/FeatureCollection
     inputs = {
         "gpw": {
+            "ee_type": EETask.IMAGECOLLECTION,
             "ee_path": "CIESIN/GPWv411/GPW_Population_Density",
             "maxage": 5  # years
         }
@@ -18,7 +19,7 @@ class HIIPopulationDensity(EETask):
         super().__init__(*args, **kwargs)
         self.set_aoi_from_ee("{}/sumatra_poc_aoi".format(self.ee_rootdir))
 
-    def run_calc(self):
+    def calc(self):
         gpw = ee.ImageCollection(self.inputs['gpw']['ee_path'])
 
         ee_taskdate = ee.Date(self.taskdate.strftime(self.DATE_FORMAT))
@@ -29,7 +30,7 @@ class HIIPopulationDensity(EETask):
         gpw_diff_fraction = gpw_diff.multiply(numerator.divide(self.gpw_cadence * 365))
         gpw_taskdate = gpw_prior.add(gpw_diff_fraction)
         gpw_taskdate_300m = gpw_taskdate.resample().reproject(crs=self.crs, scale=self.scale)
-        
+
         gpw_venter = gpw_taskdate_300m.add(ee.Image(1))\
             .log()\
             .multiply(ee.Image(3.333))
@@ -42,5 +43,6 @@ class HIIPopulationDensity(EETask):
         # add any task-specific checks here, and set self.status = self.FAILED if any fail
 
 
-popdens_task = HIIPopulationDensity()
-popdens_task.run()
+if __name__ == "__main__":
+    popdens_task = HIIPopulationDensity()
+    popdens_task.run()
