@@ -11,8 +11,19 @@ class HIIPopulationDensity(EETask):
             "ee_type": EETask.IMAGECOLLECTION,
             "ee_path": "CIESIN/GPWv411/GPW_Population_Density",
             "maxage": 5  # years
-        }
-    }
+        },
+        "ocean": {
+            "ee_type": EETask.IMAGE,
+            "ee_path": "users/aduncan/cci/ESACCI-LC-L4-WB-Ocean-Map-150m-P13Y-2000-v40",
+        },
+        "jrc": {
+            "ee_type": EETask.IMAGE,
+            "ee_path": 'JRC/GSW1_0/GlobalSurfaceWater',
+        },
+        "caspian": {
+            "ee_type": EETask.FEATURECOLLECTION,
+            "ee_path": 'users/aduncan/caspian',
+        },            }
     gpw_cadence = 5
 
     def __init__(self, *args, **kwargs):
@@ -31,9 +42,23 @@ class HIIPopulationDensity(EETask):
         gpw_taskdate = gpw_prior.add(gpw_diff_fraction)
         gpw_taskdate_300m = gpw_taskdate.resample().reproject(crs=self.crs, scale=self.scale)
 
+
+        caspian = ee.FeatureCollection(self.inputs['caspian']['ee_path'])
+
+        jrc = ee.Image(self.inputs['jrc']['ee_path'])\
+                        .select('occurrence')\
+                        .lte(75)\
+                        .unmask(1)\
+                        .multiply(ee.Image(0).clip(caspian).unmask(1))
+
+        ocean = ee.Image(self.inputs['ocean']['ee_path'])
+
+
         gpw_venter = gpw_taskdate_300m.add(ee.Image(1))\
             .log()\
-            .multiply(ee.Image(3.333))
+            .multiply(ee.Image(3.333))\
+            .updateMask(jrc)\
+            .updateMask(ocean)
         # TODO: mask water with centralized HII-defined water images
 
         self.export_image_ee(gpw_venter, '{}/{}'.format(self.ee_driverdir, 'hii_popdens_driver'))
