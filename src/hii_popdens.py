@@ -1,4 +1,6 @@
+import argparse
 import ee
+from datetime import datetime, timezone
 from task_base import EETask
 
 
@@ -44,5 +46,8 @@ class HIIPopulationDensity(EETask):
 
 
 if __name__ == "__main__":
-    popdens_task = HIIPopulationDensity()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--taskdate', default=datetime.now(timezone.utc).date())
+    options = parser.parse_args()
+    popdens_task = HIIPopulationDensity(**vars(options))
     popdens_task.run()
