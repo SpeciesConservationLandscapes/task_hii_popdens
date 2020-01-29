@@ -1,4 +1,6 @@
+import argparse 
 import ee
+from datetime import datetime, timezone
 from task_base import EETask
 
 
@@ -12,26 +14,24 @@ class HIIPopulationDensity(EETask):
             "ee_path": "CIESIN/GPWv411/GPW_Population_Density",
             "maxage": 5  # years
         },
-        "ocean": {
+        "watermask": {
             "ee_type": EETask.IMAGE,
-            "ee_path": "users/aduncan/cci/ESACCI-LC-L4-WB-Ocean-Map-150m-P13Y-2000-v40",
-        },
-        "jrc": {
-            "ee_type": EETask.IMAGE,
-            "ee_path": 'JRC/GSW1_0/GlobalSurfaceWater',
-        },
-        "caspian": {
-            "ee_type": EETask.FEATURECOLLECTION,
-            "ee_path": 'users/aduncan/caspian',
-        },            }
+            "ee_path": "projects/HII/v1/source/phys/watermask_jrc70_cciocean",
+        }
+
+                   }
     gpw_cadence = 5
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_aoi_from_ee("{}/sumatra_poc_aoi".format(self.ee_rootdir))
 
     def calc(self):
+
         gpw = ee.ImageCollection(self.inputs['gpw']['ee_path'])
+        watermask = ee.Image(self.inputs['watermask']['ee_path'])
+        print('taskdate is {}'.format(self.taskdate))
 
         ee_taskdate = ee.Date(self.taskdate.strftime(self.DATE_FORMAT))
         gpw_prior = gpw.filterDate(ee_taskdate.advance(-self.gpw_cadence, 'year'), ee_taskdate).first()
@@ -43,25 +43,13 @@ class HIIPopulationDensity(EETask):
         gpw_taskdate_300m = gpw_taskdate.resample().reproject(crs=self.crs, scale=self.scale)
 
 
-        caspian = ee.FeatureCollection(self.inputs['caspian']['ee_path'])
 
-        jrc = ee.Image(self.inputs['jrc']['ee_path'])\
-                        .select('occurrence')\
-                        .lte(75)\
-                        .unmask(1)\
-                        .multiply(ee.Image(0).clip(caspian).unmask(1))
-
-        ocean = ee.Image(self.inputs['ocean']['ee_path'])
-
-
-        gpw_venter = gpw_taskdate_300m.add(ee.Image(1))\
+        hii_popdens_driver = gpw_taskdate_300m.add(ee.Image(1))\
             .log()\
             .multiply(ee.Image(3.333))\
-            .updateMask(jrc)\
-            .updateMask(ocean)
-        # TODO: mask water with centralized HII-defined water images
+            .updateMask(watermask)
 
-        self.export_image_ee(gpw_venter, '{}/{}'.format(self.ee_driverdir, 'hii_popdens_driver'))
+        self.export_image_ee(hii_popdens_driver, '{}/{}'.format(self.ee_driverdir, 'hii_popdens_driver'))
 
     def check_inputs(self):
         super().check_inputs()
@@ -69,5 +57,8 @@ class HIIPopulationDensity(EETask):
 
 
 if __name__ == "__main__":
-    popdens_task = HIIPopulationDensity()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--taskdate', default=datetime.now(timezone.utc).date())
+    options = parser.parse_args()
+    popdens_task = HIIPopulationDensity(**vars(options))
     popdens_task.run()
