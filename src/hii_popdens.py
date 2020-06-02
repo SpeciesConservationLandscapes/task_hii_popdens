@@ -31,6 +31,7 @@ class HIIPopulationDensity(EETask):
 
         gpw = ee.ImageCollection(self.inputs['gpw']['ee_path'])
         watermask = ee.Image(self.inputs['watermask']['ee_path'])
+        print('test')
         print('taskdate is {}'.format(self.taskdate))
 
         ee_taskdate = ee.Date(self.taskdate.strftime(self.DATE_FORMAT))
@@ -48,6 +49,7 @@ class HIIPopulationDensity(EETask):
             .log()\
             .multiply(ee.Image(3.333))\
             .updateMask(watermask)
+            .multiply(10)
 
         self.export_image_ee(hii_popdens_driver, '{}/{}'.format(self.ee_driverdir, 'hii_popdens_driver'))
 
