@@ -7,7 +7,7 @@ from task_base import EETask
 class HIIPopulationDensity(EETask):
     ee_rootdir = "projects/HII/v1/sumatra_poc"
     ee_driverdir = "driver/popdens"
-    # if input lives in ee, it should have an "ee_path" pointing to an ImageCollection/FeatureCollection
+    ee_gpw_interpolated = "misc/gpw_interpolated"
     inputs = {
         "gpw": {
             "ee_type": EETask.IMAGECOLLECTION,
@@ -17,6 +17,7 @@ class HIIPopulationDensity(EETask):
         "watermask": {
             "ee_type": EETask.IMAGE,
             "ee_path": "projects/HII/v1/source/phys/watermask_jrc70_cciocean",
+            "maxage": 30,
         },
     }
     scale = 300
@@ -45,14 +46,16 @@ class HIIPopulationDensity(EETask):
             crs=self.crs, scale=self.scale
         )
 
-        # TODO: replace hardcoded arguments like 3.333 with class variables
+        # TODO: replace hardcoded arguments like 3.333 with class variables, or provide commented/linked documentation
         hii_popdens_driver = (
             gpw_taskdate_300m.add(ee.Image(1))
             .log()
             .multiply(ee.Image(3.333))
             .updateMask(watermask)
+            .multiply(10)
         )
 
+        self.export_image_ee(gpw_taskdate_300m, self.ee_gpw_interpolated)
         self.export_image_ee(
             hii_popdens_driver, "{}/{}".format(self.ee_driverdir, "hii_popdens_driver")
         )
