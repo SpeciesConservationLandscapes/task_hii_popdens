@@ -46,13 +46,13 @@ class HIIPopulationDensity(EETask):
             crs=self.crs, scale=self.scale
         )
 
-        # TODO: replace hardcoded arguments like 3.333 with class variables, or provide commented/linked documentation
+        # Popdensity driver is copied directly from Venter https://www.nature.com/articles/ncomms12558 :
+        # Pressure score = 3.333xlog(population density + 1)
         hii_popdens_driver = (
             gpw_taskdate_300m.add(ee.Image(1))
             .log()
             .multiply(ee.Image(3.333))
             .updateMask(watermask)
-            .multiply(10)
         )
 
         self.export_image_ee(gpw_taskdate_300m, self.ee_gpw_interpolated)
