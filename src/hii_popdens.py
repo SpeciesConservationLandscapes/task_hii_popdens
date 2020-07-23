@@ -17,7 +17,7 @@ class HIIPopulationDensity(EETask):
         "watermask": {
             "ee_type": EETask.IMAGE,
             "ee_path": "projects/HII/v1/source/phys/watermask_jrc70_cciocean",
-            "maxage": 30,
+            "static": True,
         },
     }
     scale = 300
@@ -46,8 +46,6 @@ class HIIPopulationDensity(EETask):
             crs=self.crs, scale=self.scale
         )
 
-        # Popdensity driver is copied directly from Venter https://www.nature.com/articles/ncomms12558 :
-        # Pressure score = 3.333xlog(population density + 1)
         hii_popdens_driver = (
             gpw_taskdate_300m.add(ee.Image(1))
             .log()
