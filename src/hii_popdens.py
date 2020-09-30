@@ -56,6 +56,7 @@ class HIIPopulationDensity(HIITask):
             gpw_taskdate_300m.add(ee.Image(1))
             .log()
             .multiply(ee.Image(3.333))
+            .unmask(0)
             .updateMask(watermask)
         )
 
