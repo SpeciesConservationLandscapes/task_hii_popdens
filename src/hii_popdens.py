@@ -76,7 +76,7 @@ class HIIPopulationDensity(HIITask):
         hii_popdens_driver = (
             gpw_taskdate.resample("bilinear")
             .add(ee.Image(1))
-            .log()
+            .log10()
             .multiply(ee.Image(3.333))
             .unmask(0)
             .clamp(0, 10)
