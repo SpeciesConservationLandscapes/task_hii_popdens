@@ -97,7 +97,12 @@ class HIIPopulationDensity(HIITask):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--taskdate", default=datetime.now(timezone.utc).date())
+    parser.add_argument("-d", "--taskdate")
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="overwrite existing outputs instead of incrementing",
+    )
     options = parser.parse_args()
     popdens_task = HIIPopulationDensity(**vars(options))
     popdens_task.run()
